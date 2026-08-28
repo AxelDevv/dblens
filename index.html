@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>DBLens — SQLite Viewer &amp; Editor</title>
+<meta name="description" content="DBLens is a free online SQLite viewer and editor. Open .db and .sqlite files directly in your browser — no upload, no server, 100% private. View tables, run SQL, export data.">
+<meta name="keywords" content="sqlite viewer online, sqlite editor, open sqlite file browser, db viewer, sqlite database viewer, sqlite online, dblens">
+<meta name="author" content="Axel">
+<meta property="og:title" content="DBLens — SQLite Viewer &amp; Editor">
+<meta property="og:description" content="Open and edit SQLite databases in your browser. Free, fast, 100% private.">
+<meta property="og:type" content="website">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg0:#090c10;--bg1:#0d1117;--bg2:#161b22;--bg3:#1c2128;--bg4:#21262d;--bg5:#2d333b;
+  --bdr:rgba(240,246,252,.1);--bdrb:rgba(240,246,252,.055);--bhov:rgba(177,186,196,.07);
+  --t0:#e6edf3;--t1:#adbac7;--t2:#768390;--t3:#545d68;
+  --blue:#58a6ff;--blues:rgba(88,166,255,.13);--blueg:rgba(88,166,255,.22);
+  --green:#3fb950;--greens:rgba(63,185,80,.13);
+  --orange:#e3b341;--oranges:rgba(227,179,65,.13);
+  --red:#f85149;--reds:rgba(248,81,73,.13);
+  --purple:#bc8cff;--purples:rgba(188,140,255,.13);
+  --cyan:#56d3e0;--cyans:rgba(86,211,224,.13);
+  --r:6px;--rs:4px;--rl:10px;
+  --sbw:224px;--hdh:48px;--fth:24px;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Inter',Roboto,sans-serif;
+  background:var(--bg0);color:var(--t0);font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bg5);border-radius:3px}
+
+/* LANDING */
+#landing{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:100vh;gap:22px;padding:20px;
+  background:radial-gradient(ellipse 75% 55% at 50% 0%,rgba(88,166,255,.07) 0%,transparent 70%),var(--bg0);
+  animation:fi .5s ease}
+@keyframes fi{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.l-logo{display:flex;align-items:center;gap:12px;font-size:26px;font-weight:800;letter-spacing:-.5px}
+.l-icon{width:44px;height:44px;background:linear-gradient(135deg,var(--blue),#7c3aed);border-radius:12px;
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;
+  color:#fff;letter-spacing:-.5px;box-shadow:0 0 0 1px rgba(88,166,255,.25),0 4px 24px var(--blueg)}
+.l-sub{color:var(--t2);font-size:13px;text-align:center;max-width:400px}
+#dz{width:100%;max-width:460px;border:2px dashed var(--bdr);border-radius:var(--rl);
+  padding:36px 24px;text-align:center;cursor:pointer;background:var(--bg2);transition:all .22s;user-select:none}
+#dz:hover,#dz.over{border-color:var(--blue);background:var(--blues);transform:translateY(-2px)}
+.dz-ico{width:44px;height:36px;margin:0 auto 14px;opacity:.45}
+.dz-ico svg{width:100%;height:100%}
+.dz-ttl{font-size:15px;font-weight:700;margin-bottom:5px}
+.dz-sub{color:var(--t2);font-size:13px}
+.dz-hl{color:var(--blue);font-weight:500}
+.dz-ext{margin-top:12px;font-size:11px;color:var(--t3);background:var(--bg3);
+  padding:3px 12px;border-radius:999px;display:inline-block}
+.url-row{display:flex;gap:8px;width:100%;max-width:460px}
+.url-inp{flex:1;min-width:0;background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--rs);
+  padding:9px 12px;color:var(--t0);font-size:13px;outline:none;transition:border-color .15s}
+.url-inp:focus{border-color:var(--blue)}.url-inp::placeholder{color:var(--t3)}
+.l-footer{color:var(--t3);font-size:11px;margin-top:8px}
+
+/* BUTTONS */
+.btn-p{background:var(--blue);color:#fff;border:none;border-radius:var(--rs);padding:8px 14px;
+  font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;
+  min-height:36px;display:flex;align-items:center;gap:5px;transition:opacity .15s}
+.btn-p:active{opacity:.8}.btn-p:disabled{opacity:.4;cursor:not-allowed}
+.btn-g{background:transparent;border:1px solid var(--bdr);color:var(--t1);border-radius:var(--rs);
+  padding:5px 10px;font-size:12px;cursor:pointer;
+  display:flex;align-items:center;gap:5px;white-space:nowrap;min-height:32px;transition:all .12s}
+.btn-g:hover{background:var(--bhov);border-color:rgba(240,246,252,.2);color:var(--t0)}
+.btn-g:active{background:var(--bhov)}
+.btn-g.act{background:var(--blues);border-color:var(--blue);color:var(--blue)}
+.btn-danger{background:var(--reds);border:1px solid rgba(248,81,73,.35);color:var(--red);
+  border-radius:var(--rs);padding:7px 12px;font-size:12px;cursor:pointer;
+  display:flex;align-items:center;gap:5px;min-height:32px;transition:all .12s}
+.btn-danger:hover{background:rgba(248,81,73,.22)}
+
+/* HAMBURGER */
+.ham-btn{display:none;flex-direction:column;justify-content:center;gap:5px;
+  width:40px;height:40px;padding:0 10px;background:transparent;border:none;
+  cursor:pointer;color:var(--t1);border-radius:var(--rs);flex-shrink:0}
+.ham-btn:hover,.ham-btn:active{background:var(--bhov)}
+.ham-btn span{display:block;width:100%;height:2px;background:currentColor;border-radius:1px}
+
+/* MOBILE MORE */
+.mob-more{display:none;width:38px;height:38px;background:transparent;border:none;
+  cursor:pointer;color:var(--t1);border-radius:var(--rs);font-size:20px;
+  align-items:center;justify-content:center;flex-shrink:0;letter-spacing:1px;padding-bottom:3px}
+.mob-more:hover,.mob-more:active{background:var(--bhov)}
+
+/* MOBILE DROPDOWN */
+#mob-dd{display:none;position:absolute;top:calc(var(--hdh));right:8px;z-index:500;
+  background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--r);
+  box-shadow:0 8px 24px rgba(0,0,0,.4);min-width:180px;overflow:hidden;max-height:70vh;overflow-y:auto}
+#mob-dd.on{display:block;animation:fi .15s ease}
+#mob-dd button{display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;
+  background:transparent;border:none;border-bottom:1px solid var(--bdr);color:var(--t1);
+  font-size:13px;cursor:pointer;text-align:left}
+#mob-dd button:last-child{border-bottom:none}
+#mob-dd button:hover{background:var(--bhov);color:var(--t0)}
+#mob-dd .dd-sec{padding:8px 16px 4px;font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.6px;color:var(--t3);border-bottom:none;cursor:default;pointer-events:none}
+#mob-dd .dd-sep{height:1px;background:var(--bdr);margin:2px 0;padding:0;cursor:default;pointer-events:none}
+
+/* EXPORT DROPDOWN */
+.exp-wrap{position:relative}
+#exp-dd{display:none;position:absolute;top:calc(100% + 4px);right:0;z-index:200;
+  background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--r);
+  box-shadow:0 8px 24px rgba(0,0,0,.45);min-width:195px;overflow:hidden;animation:fi .12s ease}
+#exp-dd.on{display:block}
+.exp-sec{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+  color:var(--t3);padding:8px 12px 3px}
+.exp-div{height:1px;background:var(--bdr);margin:3px 0}
+#exp-dd button{display:flex;align-items:center;gap:9px;width:100%;padding:8px 12px;
+  background:transparent;border:none;color:var(--t1);font-size:12px;cursor:pointer;text-align:left}
+#exp-dd button:hover{background:var(--bhov);color:var(--t0)}
+
+/* SIDEBAR BACKDROP */
+#sb-back{display:none;position:fixed;inset:0;background:rgba(0,0,0,.58);
+  z-index:299;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+#sb-back.on{display:block}
+
+/* APP */
+#app{display:none;height:100vh;flex-direction:column;position:relative}
+#app.on{display:flex}
+
+/* HEADER */
+#hdr{height:var(--hdh);min-height:var(--hdh);background:var(--bg1);border-bottom:1px solid var(--bdr);
+  display:flex;align-items:center;padding:0 10px;gap:6px;z-index:100;position:relative}
+.h-logo{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14px;
+  min-width:calc(var(--sbw) - 10px);flex-shrink:0}
+.h-ico{width:24px;height:24px;background:linear-gradient(135deg,var(--blue),#7c3aed);
+  border-radius:5px;display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:900;color:#fff;flex-shrink:0}
+.h-div{width:1px;height:20px;background:var(--bdr);flex-shrink:0;margin:0 2px}
+.h-db{display:flex;align-items:center;gap:6px;font-weight:600;min-width:0;overflow:hidden}
+.h-db #hname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.h-sz{color:var(--t3);font-size:11px;font-weight:400;flex-shrink:0}
+.h-sp{flex:1;min-width:0}
+.h-acts{display:flex;gap:5px;flex-shrink:0;align-items:center}
+
+/* SIDEBAR CLOSE */
+.sb-close{display:none;position:absolute;top:10px;right:10px;width:32px;height:32px;
+  background:transparent;border:none;cursor:pointer;color:var(--t2);font-size:16px;
+  border-radius:var(--rs);align-items:center;justify-content:center}
+.sb-close:hover{background:var(--bhov);color:var(--t0)}
+
+/* LAYOUT */
+#lay{display:flex;flex:1;overflow:hidden}
+
+/* SIDEBAR */
+#sb{width:var(--sbw);min-width:var(--sbw);background:var(--bg1);border-right:1px solid var(--bdr);
+  display:flex;flex-direction:column;overflow:hidden;
+  transition:transform .28s cubic-bezier(.4,0,.2,1);position:relative}
+.sb-head{padding:12px 8px 8px;border-bottom:1px solid var(--bdr)}
+.sb-lbl{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;
+  color:var(--t3);padding:0 8px;margin-bottom:7px}
+.stat-g{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.stat-c{background:var(--bg3);border-radius:var(--rs);padding:8px}
+.stat-l{font-size:10px;color:var(--t3)}.stat-v{font-size:15px;font-weight:800;margin-top:2px}
+.sb-tbl{padding:10px 8px 5px}
+.t-flt{background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--rs);
+  padding:7px 10px;color:var(--t0);font-size:13px;outline:none;width:100%;
+  transition:border-color .15s;margin-bottom:5px}
+.t-flt:focus{border-color:var(--blue)}.t-flt::placeholder{color:var(--t3)}
+#tlist{overflow-y:auto;flex:1;padding:2px 8px 10px;-webkit-overflow-scrolling:touch}
+.ti{display:flex;align-items:center;gap:7px;padding:9px 8px;border-radius:var(--rs);
+  cursor:pointer;transition:background .1s;min-height:44px}
+.ti:hover{background:var(--bhov)}.ti.act{background:var(--blues)}.ti:active{background:var(--blues)}
+.ti-dot{width:6px;height:6px;border-radius:50%;background:var(--t3);flex-shrink:0;margin-left:2px}
+.ti.act .ti-dot{background:var(--blue)}
+.ti-nm{flex:1;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--t1)}
+.ti.act .ti-nm{color:var(--blue)}
+.ti-cnt{font-size:10px;color:var(--t3);background:var(--bg4);padding:2px 7px;border-radius:9px;flex-shrink:0}
+.ti.act .ti-cnt{background:var(--blues);color:var(--blue)}
+
+/* MAIN */
+#cont{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg0);min-width:0}
+.no-sel{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;color:var(--t3);user-select:none}
+#tv{display:none;flex-direction:column;flex:1;overflow:hidden}
+#tv.on{display:flex}
+
+/* TABS */
+#tabs{display:flex;background:var(--bg1);border-bottom:1px solid var(--bdr);padding:0 8px}
+.tb{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;
+  padding:0 8px;font-size:12px;font-weight:600;color:var(--t2);cursor:pointer;border:none;
+  background:transparent;border-bottom:2px solid transparent;transition:all .15s;min-height:40px}
+.tb:hover{color:var(--t0)}.tb.act{color:var(--blue);border-bottom-color:var(--blue)}
+
+/* PANES */
+.pane{display:none;flex-direction:column;flex:1;overflow:hidden}
+.pane.on{display:flex}
+
+/* TOOLBAR */
+.tbar{display:flex;align-items:center;gap:7px;padding:7px 10px;background:var(--bg1);
+  border-bottom:1px solid var(--bdr);min-height:44px;flex-shrink:0}
+.tbar.edit-on{border-bottom-color:rgba(88,166,255,.35);background:rgba(88,166,255,.04)}
+.tbar-in{background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--rs);
+  padding:6px 10px;color:var(--t0);font-size:13px;outline:none;flex:1;
+  min-width:0;transition:border-color .15s}
+.tbar-in:focus{border-color:var(--blue)}.tbar-in::placeholder{color:var(--t3)}
+.tbar-rc{color:var(--t2);font-size:11px;white-space:nowrap;flex-shrink:0}
+
+/* DATA TABLE */
+.tw{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;position:relative}
+.edit-banner{padding:6px 12px;background:rgba(88,166,255,.08);border-bottom:1px solid rgba(88,166,255,.25);
+  font-size:11px;color:var(--blue);flex-shrink:0}
+table.dt{width:100%;border-collapse:collapse;font-size:12px}
+table.dt thead{position:sticky;top:0;z-index:2}
+table.dt th{background:var(--bg2);color:var(--t2);font-weight:700;font-size:11px;text-align:left;
+  padding:8px 10px;border-bottom:1px solid var(--bdr);white-space:nowrap;
+  cursor:pointer;user-select:none;transition:color .12s}
+table.dt th:hover{color:var(--t0)}
+table.dt th.sa,table.dt th.sd{color:var(--blue)}
+table.dt th:first-child,table.dt th.th-del{cursor:default;width:44px;padding-left:10px;color:var(--t3);font-size:10px}
+table.dt th.th-del{width:36px;padding:8px 4px}
+.sic{margin-left:3px;font-size:10px;opacity:.35}
+th.sa .sic,th.sd .sic{opacity:1}
+table.dt td{padding:8px 10px;border-bottom:1px solid var(--bdrb);vertical-align:middle;
+  max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--t1)}
+table.dt td:first-child{padding-left:10px;color:var(--t3);font-size:11px;width:44px;
+  font-variant-numeric:tabular-nums;cursor:default}
+table.dt td.td-del{width:36px;padding:6px 4px;cursor:default}
+table.dt tbody tr{transition:background .08s}
+table.dt tbody tr:hover{background:var(--bhov)}
+table.dt tbody tr:hover td{color:var(--t0)}
+table.dt tbody tr.editable:hover{cursor:pointer;background:var(--blues)}
+table.dt tbody tr:active{background:var(--blues)}
+.cn{color:var(--t3)!important;font-style:italic}
+.cnum{color:var(--purple)!important}
+.cblob{color:var(--orange)!important}
+td.copied{background:var(--greens)!important}
+.del-btn{width:26px;height:26px;border-radius:var(--rs);background:transparent;
+  border:1px solid rgba(248,81,73,.3);color:var(--red);cursor:pointer;font-size:13px;
+  display:flex;align-items:center;justify-content:center;transition:all .12s}
+.del-btn:hover{background:var(--reds)}
+
+/* PAGINATION */
+#pag{display:flex;align-items:center;gap:5px;padding:5px 10px;background:var(--bg1);
+  border-top:1px solid var(--bdr);min-height:42px;flex-shrink:0;flex-wrap:nowrap}
+.pb{background:var(--bg3);border:1px solid var(--bdr);color:var(--t1);border-radius:var(--rs);
+  padding:4px 9px;font-size:12px;cursor:pointer;transition:all .12s;min-height:30px;white-space:nowrap}
+.pb:hover:not(:disabled){background:var(--bhov);color:var(--t0)}
+.pb:active:not(:disabled){background:var(--bhov)}
+.pb:disabled{opacity:.28;cursor:not-allowed}
+.pb-scroll{background:var(--bg3);border:1px solid var(--bdr);color:var(--t1);
+  border-radius:var(--rs);padding:4px 9px;font-size:12px;cursor:pointer;
+  transition:all .12s;min-height:30px;line-height:1;white-space:nowrap}
+.pb-scroll:hover{background:var(--bhov);color:var(--blue);border-color:rgba(88,166,255,.4)}
+.pb-scroll:active{background:var(--bhov)}
+.pag-sep{width:1px;height:18px;background:var(--bdr);flex-shrink:0}
+.pi{color:var(--t3);font-size:11px;flex:1;text-align:center;min-width:60px}
+.psp{flex:1}
+.ps-lbl{color:var(--t3);font-size:11px;flex-shrink:0}
+.ps-s{background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--rs);
+  padding:3px 6px;color:var(--t1);font-size:11px;outline:none;cursor:pointer}
+
+/* SCHEMA */
+.sc-w{padding:16px;overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch}
+.sc-nm{font-size:17px;font-weight:800;margin-bottom:4px}
+.sc-meta{color:var(--t2);font-size:12px;margin-bottom:14px}
+.sc-sh{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+  color:var(--t3);margin:16px 0 6px}
+.col-list{display:flex;flex-direction:column;gap:5px}
+.col-c{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);
+  padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.col-c:hover{border-color:rgba(240,246,252,.2)}
+.col-i{color:var(--t3);font-size:11px;width:18px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums}
+.col-nm{font-weight:600;font-size:12px;font-family:'SF Mono','Fira Code',monospace;min-width:80px}
+.ty{font-size:10px;padding:2px 7px;border-radius:999px;font-weight:700;font-family:monospace}
+.ty-i{background:var(--purples);color:var(--purple)}.ty-r{background:var(--cyans);color:var(--cyan)}
+.ty-t{background:var(--greens);color:var(--green)}.ty-b{background:var(--oranges);color:var(--orange)}
+.ty-n{background:var(--blues);color:var(--blue)}.ty-o{background:var(--bg5);color:var(--t2)}
+.bdgs{display:flex;gap:4px;flex-wrap:wrap}
+.bdg{font-size:10px;padding:1px 6px;border-radius:3px;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+.b-pk{background:var(--oranges);color:var(--orange)}.b-nn{background:var(--blues);color:var(--blue)}
+.b-df{background:var(--bg5);color:var(--t2)}.b-uq{background:var(--purples);color:var(--purple)}
+pre.ddl{background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--r);padding:12px;
+  font-family:'SF Mono','Fira Code',monospace;font-size:11px;color:var(--t1);
+  overflow-x:auto;line-height:1.7;margin-top:6px}
+
+/* SQL */
+.sql-top{padding:12px;border-bottom:1px solid var(--bdr);background:var(--bg1);flex-shrink:0}
+.sql-ed{width:100%;height:130px;min-height:70px;background:var(--bg3);border:1px solid var(--bdr);
+  border-radius:var(--r);padding:10px;color:var(--t0);
+  font-family:'SF Mono','Fira Code',monospace;font-size:12px;line-height:1.6;
+  outline:none;resize:vertical;transition:border-color .2s}
+.sql-ed:focus{border-color:var(--blue)}
+.sql-acts{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+.sql-hint{color:var(--t3);font-size:11px}
+.sql-res{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.sql-rh{padding:7px 12px;background:var(--bg2);border-bottom:1px solid var(--bdr);
+  font-size:11px;color:var(--t2);display:flex;align-items:center;gap:8px;min-height:32px;flex-shrink:0}
+.rt{color:var(--green);font-weight:700}.re{color:var(--red)}
+.sql-rb{flex:1;overflow:auto;-webkit-overflow-scrolling:touch}
+
+/* EMPTY */
+.emp{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;color:var(--t3);padding:32px;text-align:center}
+.emp-ic{font-size:22px;font-weight:200;opacity:.4;line-height:1}
+.emp-t{font-size:14px;font-weight:700;color:var(--t2)}.emp-s{font-size:12px}
+.hidden{display:none!important}
+
+/* EDIT MODAL */
+#edit-modal{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;
+  padding:16px;background:rgba(0,0,0,.65);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+#edit-modal.hidden{display:none}
+.modal-box{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--rl);
+  width:100%;max-width:460px;max-height:82vh;display:flex;flex-direction:column;
+  box-shadow:0 24px 64px rgba(0,0,0,.55);animation:fi .2s ease}
+.modal-hdr{display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid var(--bdr);
+  font-weight:700;font-size:14px;gap:10px}
+.modal-hdr button{margin-left:auto;background:transparent;border:none;color:var(--t2);
+  font-size:18px;cursor:pointer;width:28px;height:28px;border-radius:var(--rs);
+  display:flex;align-items:center;justify-content:center;transition:background .12s}
+.modal-hdr button:hover{background:var(--bhov);color:var(--t0)}
+.modal-fields{overflow-y:auto;padding:14px 18px;display:flex;flex-direction:column;gap:10px;flex:1;-webkit-overflow-scrolling:touch}
+.modal-field label{font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;
+  letter-spacing:.5px;display:block;margin-bottom:4px}
+.modal-field .col-type{font-size:10px;color:var(--t3);margin-left:4px;text-transform:none;letter-spacing:0;font-weight:400}
+.modal-field input,.modal-field textarea{width:100%;background:var(--bg3);border:1px solid var(--bdr);
+  border-radius:var(--rs);padding:7px 10px;color:var(--t0);font-size:13px;outline:none;
+  font-family:inherit;transition:border-color .15s}
+.modal-field input:focus,.modal-field textarea:focus{border-color:var(--blue)}
+.modal-field textarea{resize:vertical;min-height:60px;font-family:'SF Mono','Fira Code',monospace;font-size:12px}
+.modal-acts{display:flex;gap:8px;padding:12px 18px;border-top:1px solid var(--bdr);flex-wrap:wrap}
+
+/* FOOTER */
+#footer{height:var(--fth);min-height:var(--fth);background:var(--bg1);border-top:1px solid var(--bdr);
+  display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--t3);
+  letter-spacing:.3px;flex-shrink:0}
+
+/* TOAST */
+#toasts{position:fixed;bottom:32px;right:12px;display:flex;flex-direction:column;
+  gap:8px;z-index:9999;pointer-events:none}
+.toast{background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--r);
+  padding:9px 14px;font-size:12px;color:var(--t0);display:flex;align-items:center;gap:8px;
+  animation:tin .2s ease;box-shadow:0 4px 18px rgba(0,0,0,.35);max-width:260px;pointer-events:auto}
+@keyframes tin{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
+.toast.s{border-left:3px solid var(--green)}.toast.e{border-left:3px solid var(--red)}.toast.i{border-left:3px solid var(--blue)}
+.toast-ic{font-size:11px;font-weight:700;flex-shrink:0}
+.toast.s .toast-ic{color:var(--green)}.toast.e .toast-ic{color:var(--red)}.toast.i .toast-ic{color:var(--blue)}
+
+/* LOADING */
+#ldo{position:fixed;inset:0;background:rgba(0,0,0,.52);display:none;
+  align-items:center;justify-content:center;z-index:9998}
+.spin{width:30px;height:30px;border:3px solid var(--bdr);border-top-color:var(--blue);
+  border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* MOBILE */
+@media (max-width:640px){
+  .ham-btn{display:flex}.mob-more{display:flex}
+  .h-logo,.h-div,.h-acts{display:none}
+  #hdr{padding:0 4px;gap:2px}
+  .h-db{flex:1;overflow:hidden;font-size:13px}
+  #sb{position:fixed;left:0;top:0;height:100%;z-index:300;
+    width:285px;min-width:285px;transform:translateX(-100%)}
+  #sb.open{transform:translateX(0);box-shadow:4px 0 32px rgba(0,0,0,.6)}
+  .sb-close{display:flex}
+  .ti{min-height:48px;padding:10px 8px}.ti-nm{font-size:14px}
+  .t-flt{font-size:14px;padding:8px 10px}
+  #landing{padding:24px 16px;gap:18px}
+  .l-logo{font-size:22px}.l-sub{font-size:12px}
+  #dz{padding:28px 20px}
+  .url-row{flex-direction:column;gap:10px}
+  .url-inp{font-size:14px;padding:10px 12px}
+  .btn-p{font-size:14px;justify-content:center}
+  #tabs{padding:0}.tb{font-size:11px;min-height:44px}
+  .tbar{padding:7px 8px;gap:6px}
+  .tbar-in{font-size:14px;padding:7px 10px}
+  .tbar-rc{font-size:10px}
+  table.dt th{padding:8px 8px;font-size:10px}
+  table.dt td{padding:9px 8px;font-size:12px;max-width:140px}
+  table.dt th:first-child,table.dt td:first-child{width:34px;padding-left:6px}
+  #pag{padding:5px 6px;gap:4px}
+  .pb{padding:5px 9px;font-size:12px;min-height:34px}
+  .pb-scroll{padding:5px 9px;min-height:34px}
+  .ps-lbl,.ps-s,.psp{display:none}
+  .pi{font-size:11px;min-width:50px}
+  .sc-w{padding:12px}.sc-nm{font-size:15px}
+  .sql-top{padding:10px}.sql-ed{font-size:12px;height:110px;resize:none}
+  .sql-hint{display:none}
+  .modal-box{max-height:88vh}
+  .modal-fields{padding:12px 14px}
+  .modal-hdr{padding:12px 14px}
+  .modal-acts{padding:10px 14px}
+  #footer{font-size:10px}
+}
+</style>
+</head>
+<body>
+
+<!-- LANDING -->
+<div id="landing">
+  <div class="l-logo">
+    <div class="l-icon">DB</div>
+    DBLens
+  </div>
+  <p class="l-sub">Free SQLite viewer &amp; editor — open .db files directly in your browser, no upload needed</p>
+  <div id="dz">
+    <div class="dz-ico">
+      <svg viewBox="0 0 44 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="8" width="40" height="26" rx="3" stroke="currentColor" stroke-width="2"/>
+        <path d="M14 8V5a2 2 0 012-2h12a2 2 0 012 2v3" stroke="currentColor" stroke-width="2"/>
+        <line x1="22" y1="16" x2="22" y2="27" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M16 22l6-6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="dz-ttl">Drop your database here</div>
+    <div class="dz-sub">or <span class="dz-hl">tap to browse files</span></div>
+    <div class="dz-ext">.db &nbsp;&middot;&nbsp; .sqlite &nbsp;&middot;&nbsp; .sqlite3 &nbsp;&middot;&nbsp; .db3</div>
+    <input id="fi" type="file" accept=".db,.sqlite,.sqlite3,.db3" style="display:none">
+  </div>
+  <div class="url-row">
+    <input class="url-inp" id="urlin" placeholder="Or paste a URL to a .sqlite file">
+    <button class="btn-p" onclick="loadUrl()">Load URL</button>
+  </div>
+  <div class="l-footer">&copy; 2026 Axel &mdash; DBLens</div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div id="hdr">
+    <button class="ham-btn" onclick="openSB()"><span></span><span></span><span></span></button>
+    <div class="h-logo"><div class="h-ico">DB</div>DBLens</div>
+    <div class="h-div"></div>
+    <div class="h-db"><span id="hname">&#8212;</span><span class="h-sz" id="hsize"></span></div>
+    <div class="h-sp"></div>
+    <div class="h-acts">
+      <button class="btn-g" id="edit-btn" onclick="toggleEdit()" style="display:none">Edit Table</button>
+      <div class="exp-wrap">
+        <button class="btn-g" onclick="toggleExpDD(event)">Export &#x25BE;</button>
+        <div id="exp-dd">
+          <div class="exp-sec">Current table</div>
+          <button onclick="expCSV();closeExpDD()">CSV</button>
+          <button onclick="expJSON();closeExpDD()">JSON</button>
+          <button onclick="expTSV();closeExpDD()">TSV (tab-separated)</button>
+          <button onclick="expSQL();closeExpDD()">SQL (INSERT statements)</button>
+          <button onclick="expMarkdown();closeExpDD()">Markdown table</button>
+          <div class="exp-div"></div>
+          <div class="exp-sec">All tables</div>
+          <button onclick="expAllJSON();closeExpDD()">All tables &#x2192; JSON</button>
+          <button onclick="expSQLDump();closeExpDD()">Full SQL Dump</button>
+        </div>
+      </div>
+      <button class="btn-g" onclick="closeDB()">Close</button>
+    </div>
+    <button class="mob-more" id="mob-more-btn" onclick="toggleMobMenu(event)">&#xB7;&#xB7;&#xB7;</button>
+    <div id="mob-dd">
+      <div class="dd-sec">Edit</div>
+      <button id="mob-edit-btn" onclick="toggleEdit();closeMobMenu()">Edit Table</button>
+      <div class="dd-sep"></div>
+      <div class="dd-sec">Current table</div>
+      <button onclick="expCSV();closeMobMenu()">Export CSV</button>
+      <button onclick="expJSON();closeMobMenu()">Export JSON</button>
+      <button onclick="expTSV();closeMobMenu()">Export TSV</button>
+      <button onclick="expSQL();closeMobMenu()">Export SQL</button>
+      <button onclick="expMarkdown();closeMobMenu()">Export Markdown</button>
+      <div class="dd-sep"></div>
+      <div class="dd-sec">All tables</div>
+      <button onclick="expAllJSON();closeMobMenu()">All tables &#x2192; JSON</button>
+      <button onclick="expSQLDump();closeMobMenu()">Full SQL Dump</button>
+      <div class="dd-sep"></div>
+      <button onclick="closeDB();closeMobMenu()" style="color:var(--red)">Close DB</button>
+    </div>
+  </div>
+
+  <div id="lay">
+    <div id="sb-back" onclick="closeSB()"></div>
+    <aside id="sb">
+      <button class="sb-close" onclick="closeSB()">&#x2715;</button>
+      <div class="sb-head">
+        <div class="sb-lbl">Database</div>
+        <div class="stat-g">
+          <div class="stat-c"><div class="stat-l">Tables</div><div class="stat-v" id="st-t">0</div></div>
+          <div class="stat-c"><div class="stat-l">Size</div><div class="stat-v" id="st-s">&#8212;</div></div>
+        </div>
+      </div>
+      <div class="sb-tbl">
+        <div class="sb-lbl">Tables</div>
+        <input class="t-flt" id="tflt" placeholder="Filter tables..." oninput="fltrT()">
+      </div>
+      <div id="tlist"></div>
+    </aside>
+
+    <main id="cont">
+      <div class="no-sel" id="nosel">
+        <div style="font-size:32px;font-weight:100;opacity:.15">[ ]</div>
+        <div style="font-size:15px;font-weight:700;color:var(--t2)">Select a table</div>
+        <div style="font-size:12px">tap the menu in the top-left corner</div>
+      </div>
+      <div id="tv">
+        <div id="tabs">
+          <button class="tb act" id="tb-data" onclick="switchTab('data')">Data</button>
+          <button class="tb" id="tb-schema" onclick="switchTab('schema')">Schema</button>
+          <button class="tb" id="tb-sql" onclick="switchTab('sql')">SQL</button>
+        </div>
+
+        <!-- DATA PANE -->
+        <div class="pane on" id="p-data">
+          <div class="tbar" id="tbar-data">
+            <input class="tbar-in" id="dsrch" placeholder="Search in results..." oninput="onDSrch()">
+            <span class="tbar-rc" id="rcd"></span>
+            <button class="btn-p hidden" id="add-row-btn" onclick="addRow()" style="padding:6px 12px;font-size:12px">+ Add Row</button>
+            <button class="btn-g" id="edit-tbl-btn" onclick="toggleEdit()">Edit</button>
+          </div>
+          <div id="edit-banner" class="edit-banner hidden">Edit mode: tap a row to edit &mdash; use &times; to delete a row</div>
+          <div class="tw" id="tw-main">
+            <table class="dt" id="dtbl">
+              <thead id="dth"></thead>
+              <tbody id="dtb"></tbody>
+            </table>
+            <div class="emp hidden" id="no-rows">
+              <div class="emp-ic">[ ]</div>
+              <div class="emp-t">No results</div>
+              <div class="emp-s">Try a different search term</div>
+            </div>
+          </div>
+          <div id="pag">
+            <button class="pb-scroll" onclick="scrollTW(0)">&#x2191; Top</button>
+            <button class="pb-scroll" onclick="scrollTW(1)">&#x2193; End</button>
+            <div class="pag-sep"></div>
+            <button class="pb" id="pf" onclick="gp(1)">&#xAB;</button>
+            <button class="pb" id="pp" onclick="gp(S.pg-1)">&#x2039;</button>
+            <span class="pi" id="pinfo"></span>
+            <button class="pb" id="pn" onclick="gp(S.pg+1)">&#x203A;</button>
+            <button class="pb" id="pl" onclick="gp(S.tpg)">&#xBB;</button>
+            <div class="psp"></div>
+            <span class="ps-lbl">Rows:</span>
+            <select class="ps-s" id="psz" onchange="onPsz()">
+              <option value="50">50</option>
+              <option value="100" selected>100</option>
+              <option value="250">250</option>
+              <option value="500">500</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- SCHEMA PANE -->
+        <div class="pane" id="p-schema">
+          <div class="sc-w" id="scc"></div>
+        </div>
+
+        <!-- SQL PANE -->
+        <div class="pane" id="p-sql">
+          <div class="sql-top">
+            <textarea class="sql-ed" id="sqled" placeholder="SELECT * FROM your_table LIMIT 100;"></textarea>
+            <div class="sql-acts">
+              <button class="btn-p" onclick="runSQL()" style="padding:7px 14px">Run</button>
+              <button class="btn-g" onclick="clrSQL()">Clear</button>
+              <span class="sql-hint">Ctrl+Enter to run</span>
+            </div>
+          </div>
+          <div class="sql-res">
+            <div class="sql-rh" id="sqlrh"><span style="color:var(--t3)">Results will appear here</span></div>
+            <div class="sql-rb">
+              <table class="dt" id="sqlt"><thead id="sqlth"></thead><tbody id="sqltb"></tbody></table>
+              <div class="emp" id="sqlemp">
+                <div class="emp-ic">&gt;_</div>
+                <div class="emp-t">Write a query above</div>
+                <div class="emp-s">Press Run to execute</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="footer">&copy; 2026 Axel &mdash; DBLens</div>
+</div>
+
+<!-- EDIT MODAL -->
+<div id="edit-modal" class="hidden">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <span id="modal-ttl">Edit Row</span>
+      <button onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div class="modal-fields" id="modal-fields"></div>
+    <div class="modal-acts">
+      <button class="btn-p" onclick="saveModal()">Save</button>
+      <button class="btn-g" onclick="closeModal()">Cancel</button>
+      <button class="btn-danger hidden" id="modal-del-btn" onclick="deleteFromModal()">Delete Row</button>
+    </div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+<div id="ldo"><div class="spin"></div></div>
+
+<script>
+/* SQL.JS */
+let SQL = null;
+initSqlJs({ locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/${f}` })
+  .then(s => { SQL = s; }).catch(e => console.error('sql.js:', e));
+
+/* STATE */
+const S = {
+  db:null, tables:[], all:[], sel:null,
+  tab:'data', pg:1, psz:100, tpg:1,
+  tot:0, rows:[], fr:[], cols:[],
+  sc:null, sd:'asc', srch:'',
+  rc:{}, dbName:'', dbSz:0,
+  ridOk:false   /* rows have rowid at index 0 */
+};
+
+/* EDIT STATE */
+const ED = { on:false, rid:null, isNew:false };
+
+/* SIDEBAR */
+function openSB()  { document.getElementById('sb').classList.add('open'); document.getElementById('sb-back').classList.add('on'); }
+function closeSB() { document.getElementById('sb').classList.remove('open'); document.getElementById('sb-back').classList.remove('on'); }
+function isMobile(){ return window.innerWidth <= 640; }
+
+/* MOBILE MENU */
+function toggleMobMenu(e){ e&&e.stopPropagation(); document.getElementById('mob-dd').classList.toggle('on'); }
+function closeMobMenu(){ document.getElementById('mob-dd').classList.remove('on'); }
+
+/* EXPORT DROPDOWN */
+function toggleExpDD(e){ e&&e.stopPropagation(); document.getElementById('exp-dd').classList.toggle('on'); }
+function closeExpDD(){ document.getElementById('exp-dd').classList.remove('on'); }
+
+document.addEventListener('click', e => {
+  const dd = document.getElementById('mob-dd');
+  if(dd.classList.contains('on') && !dd.contains(e.target) && e.target.id!=='mob-more-btn') closeMobMenu();
+  const ed = document.getElementById('exp-dd');
+  if(ed.classList.contains('on') && !ed.closest('.exp-wrap').contains(e.target)) closeExpDD();
+});
+
+/* DRAG & DROP */
+const dz=document.getElementById('dz'), fi=document.getElementById('fi');
+dz.addEventListener('dragover', e=>{e.preventDefault();dz.classList.add('over')});
+dz.addEventListener('dragleave', e=>{if(!dz.contains(e.relatedTarget))dz.classList.remove('over')});
+dz.addEventListener('drop', e=>{e.preventDefault();dz.classList.remove('over');if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0])});
+dz.addEventListener('click', ()=>fi.click());
+fi.addEventListener('change', e=>{if(e.target.files[0])loadFile(e.target.files[0])});
+
+/* FILE LOADING */
+async function loadFile(f){
+  if(!SQL){toast('Engine loading, retry in a moment...','i');return}
+  ld(1);
+  try{
+    const buf=await f.arrayBuffer();
+    S.db=new SQL.Database(new Uint8Array(buf));
+    S.dbName=f.name; S.dbSz=f.size; openApp();
+  }catch(e){toast('Failed to open: '+e.message,'e')}
+  ld(0);
+}
+async function loadUrl(){
+  const url=document.getElementById('urlin').value.trim();
+  if(!url){toast('Enter a URL first','i');return}
+  if(!SQL){toast('Engine loading...','i');return}
+  ld(1);
+  try{
+    const res=await fetch(url);
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const buf=await res.arrayBuffer();
+    S.db=new SQL.Database(new Uint8Array(buf));
+    S.dbName=url.split('/').pop()||'remote.db'; S.dbSz=buf.byteLength; openApp();
+  }catch(e){toast('Load failed: '+e.message,'e')}
+  ld(0);
+}
+
+/* OPEN APP */
+function openApp(){
+  document.getElementById('landing').style.display='none';
+  document.getElementById('app').classList.add('on');
+  const r=S.db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name");
+  S.all=r.length?r[0].values.map(x=>x[0]):[];
+  S.tables=[...S.all]; S.rc={};
+  S.all.forEach(t=>{
+    try{S.rc[t]=S.db.exec(`SELECT COUNT(*) FROM "${t}"`)[0].values[0][0]}
+    catch{S.rc[t]='?'}
+  });
+  document.getElementById('hname').textContent=S.dbName;
+  document.getElementById('hsize').textContent='('+fmtB(S.dbSz)+')';
+  document.getElementById('st-t').textContent=S.all.length;
+  document.getElementById('st-s').textContent=fmtB(S.dbSz);
+  renderTList();
+  if(S.all.length){selT(S.all[0]);if(isMobile())openSB();}
+  else toast('No tables found','i');
+}
+
+/* TABLE LIST */
+function renderTList(){
+  const el=document.getElementById('tlist');
+  el.innerHTML='';
+  if(!S.tables.length){
+    el.innerHTML='<div style="padding:14px 16px;color:var(--t3);font-size:12px;text-align:center">No tables match</div>';
+    return;
+  }
+  S.tables.forEach(t=>{
+    const d=document.createElement('div');
+    d.className='ti'+(t===S.sel?' act':'');
+    d.innerHTML=`<span class="ti-dot"></span><span class="ti-nm" title="${esc(t)}">${esc(t)}</span><span class="ti-cnt">${fmtNum(S.rc[t]??0)}</span>`;
+    d.addEventListener('click',()=>{selT(t);if(isMobile())closeSB()});
+    el.appendChild(d);
+  });
+}
+function fltrT(){
+  const q=document.getElementById('tflt').value.toLowerCase();
+  S.tables=S.all.filter(t=>t.toLowerCase().includes(q));
+  renderTList();
+}
+
+/* SELECT TABLE */
+function selT(name){
+  S.sel=name; S.pg=1; S.sc=null; S.sd='asc'; S.srch='';
+  if(ED.on){ED.on=false;updEditUI()}
+  document.getElementById('dsrch').value='';
+  document.getElementById('nosel').style.display='none';
+  document.getElementById('tv').classList.add('on');
+  document.getElementById('edit-btn').style.display='flex';
+  renderTList(); loadData(); buildSchema(); updateSQLEd();
+}
+
+/* DATA LOADING — always includes rowid at row[0] */
+function loadData(){
+  try{
+    const r=S.db.exec(`SELECT rowid as __rid__, * FROM "${S.sel}"`);
+    if(!r.length){S.cols=[];S.rows=[];S.ridOk=false;}
+    else{S.cols=r[0].columns.slice(1);S.rows=r[0].values;S.ridOk=true;}
+  }catch{
+    try{
+      const r=S.db.exec(`SELECT * FROM "${S.sel}"`);
+      S.cols=r.length?r[0].columns:[];
+      S.rows=r.length?r[0].values.map(row=>[null,...row]):[];
+      S.ridOk=false;
+    }catch(e2){toast('Load error: '+e2.message,'e')}
+  }
+  S.fr=[...S.rows];
+  applySearch();
+}
+
+function applySearch(){
+  const q=S.srch.toLowerCase();
+  S.fr=q?S.rows.filter(r=>r.slice(1).some(c=>c!==null&&String(c).toLowerCase().includes(q))):[...S.rows];
+  applySort();
+}
+function applySort(){
+  if(S.sc!==null){
+    const i=S.sc+1; /* +1 because index 0 is rowid */
+    S.fr.sort((a,b)=>{
+      const va=a[i],vb=b[i];
+      if(va===null&&vb===null)return 0;
+      if(va===null)return 1;if(vb===null)return -1;
+      const na=Number(va),nb=Number(vb);
+      if(!isNaN(na)&&!isNaN(nb))return S.sd==='asc'?na-nb:nb-na;
+      return S.sd==='asc'?String(va).localeCompare(String(vb)):String(vb).localeCompare(String(va));
+    });
+  }
+  S.tot=S.fr.length;
+  S.tpg=Math.max(1,Math.ceil(S.tot/S.psz));
+  S.pg=Math.min(S.pg,S.tpg);
+  renderData();
+}
+
+function renderData(){
+  /* Header */
+  let th='<tr><th style="cursor:default">#</th>';
+  if(ED.on&&S.ridOk) th+='<th class="th-del"></th>';
+  S.cols.forEach((c,i)=>{
+    const cl=S.sc===i?(S.sd==='asc'?'sa':'sd'):'';
+    const ic=S.sc===i?(S.sd==='asc'?' ^':' v'):'';
+    th+=`<th class="${cl}" data-i="${i}">${esc(c)}<span class="sic">${ic||' ='}</span></th>`;
+  });
+  th+='</tr>';
+  const dth=document.getElementById('dth');
+  dth.innerHTML=th;
+  dth.querySelectorAll('th[data-i]').forEach(el=>el.addEventListener('click',()=>sortBy(+el.dataset.i)));
+
+  /* Body */
+  const start=(S.pg-1)*S.psz;
+  const slice=S.fr.slice(start,start+S.psz);
+  const norows=document.getElementById('no-rows');
+  if(!slice.length){
+    document.getElementById('dtb').innerHTML='';
+    norows.classList.remove('hidden');
+  }else{
+    norows.classList.add('hidden');
+    const rows=slice.map((row,ri)=>{
+      const rid=row[0];
+      const data=row.slice(1);
+      let tr=`<tr${ED.on&&S.ridOk?' class="editable"':''}><td>${start+ri+1}</td>`;
+      if(ED.on&&S.ridOk) tr+=`<td class="td-del"><button class="del-btn" onclick="event.stopPropagation();confirmDelete(${rid})">&#x2715;</button></td>`;
+      data.forEach(c=>{
+        const isNull=c===null,isNum=typeof c==='number',isBlob=c instanceof Uint8Array;
+        const cl=isNull?'cn':isNum?'cnum':isBlob?'cblob':'';
+        const disp=isNull?'NULL':isBlob?'<BLOB '+c.length+'b>':esc(String(c));
+        const raw=isNull?'NULL':isBlob?'[BLOB]':String(c);
+        tr+=`<td class="${cl}" data-v="${esc(raw)}">${disp}</td>`;
+      });
+      tr+='</tr>';
+      return {html:tr,rid,data};
+    });
+    document.getElementById('dtb').innerHTML=rows.map(r=>r.html).join('');
+    /* Cell click handlers */
+    document.querySelectorAll('#dtb tr').forEach((tr,i)=>{
+      const {rid,data}=rows[i];
+      tr.querySelectorAll('td[data-v]').forEach(td=>{
+        td.style.cursor='pointer';
+        td.addEventListener('click',()=>{
+          if(ED.on&&S.ridOk) editRow(rid,data);
+          else cpCell(td);
+        });
+      });
+    });
+  }
+
+  /* Pagination */
+  document.getElementById('pinfo').textContent=`${S.pg} / ${S.tpg}  \u00B7  ${fmtNum(S.tot)}`;
+  document.getElementById('pf').disabled=S.pg===1;
+  document.getElementById('pp').disabled=S.pg===1;
+  document.getElementById('pn').disabled=S.pg===S.tpg;
+  document.getElementById('pl').disabled=S.pg===S.tpg;
+  document.getElementById('rcd').textContent=S.srch?`${fmtNum(S.tot)}/${fmtNum(S.rows.length)}`:fmtNum(S.tot)+' rows';
+}
+
+/* SCROLL */
+function scrollTW(toBottom){
+  const tw=document.getElementById('tw-main');
+  tw.scrollTo({top:toBottom?tw.scrollHeight:0,behavior:'smooth'});
+}
+
+function sortBy(i){S.sc===i?(S.sd=S.sd==='asc'?'desc':'asc'):(S.sc=i,S.sd='asc');S.pg=1;applySort()}
+function onDSrch(){S.srch=document.getElementById('dsrch').value;S.pg=1;applySearch()}
+function gp(p){S.pg=Math.max(1,Math.min(p,S.tpg));renderData()}
+function onPsz(){S.psz=+document.getElementById('psz').value;S.pg=1;applySort()}
+
+/* EDIT MODE */
+function toggleEdit(){
+  if(!S.ridOk){toast('This table does not support editing','i');return}
+  ED.on=!ED.on;
+  updEditUI();
+  renderData();
+}
+function updEditUI(){
+  const on=ED.on;
+  ['edit-btn','edit-tbl-btn'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){el.textContent=on?'Done Editing':'Edit';el.classList.toggle('act',on)}
+  });
+  document.getElementById('mob-edit-btn').textContent=on?'Done Editing':'Edit Table';
+  document.getElementById('add-row-btn').classList.toggle('hidden',!on);
+  document.getElementById('edit-banner').classList.toggle('hidden',!on);
+  document.getElementById('tbar-data').classList.toggle('edit-on',on);
+}
+
+/* MODAL */
+function openModal(title,values,rid){
+  document.getElementById('modal-ttl').textContent=title;
+  const fields=document.getElementById('modal-fields');
+  fields.innerHTML=S.cols.map((col,i)=>`
+    <div class="modal-field">
+      <label>${esc(col)}</label>
+      <input type="text" id="mf-${i}" value="${values[i]===null?'':esc(String(values[i]))}" placeholder="NULL">
+    </div>`).join('');
+  const delBtn=document.getElementById('modal-del-btn');
+  delBtn.classList.toggle('hidden',rid===null);
+  document.getElementById('edit-modal').classList.remove('hidden');
+  /* Focus first field */
+  setTimeout(()=>{const f=document.getElementById('mf-0');if(f)f.focus()},100);
+}
+function closeModal(){document.getElementById('edit-modal').classList.add('hidden')}
+function addRow(){ED.rid=null;ED.isNew=true;openModal('Add Row',S.cols.map(()=>null),null)}
+function editRow(rid,data){ED.rid=rid;ED.isNew=false;openModal('Edit Row',data,rid)}
+function saveModal(){
+  const vals=S.cols.map((_,i)=>{
+    const v=document.getElementById(`mf-${i}`).value;
+    return v===''?null:v;
+  });
+  try{
+    if(ED.isNew){
+      const ph=vals.map(()=>'?').join(', ');
+      const cl=S.cols.map(c=>`"${c}"`).join(', ');
+      S.db.run(`INSERT INTO "${S.sel}" (${cl}) VALUES (${ph})`,vals);
+      S.rc[S.sel]=+(S.rc[S.sel]||0)+1;
+    }else{
+      const set=S.cols.map(c=>`"${c}" = ?`).join(', ');
+      S.db.run(`UPDATE "${S.sel}" SET ${set} WHERE rowid = ?`,[...vals,ED.rid]);
+    }
+    renderTList();loadData();closeModal();
+    toast(ED.isNew?'Row added':'Row updated','s');
+  }catch(e){toast('Error: '+e.message,'e')}
+}
+function deleteFromModal(){
+  if(!ED.rid)return;
+  closeModal();
+  deleteRow(ED.rid);
+}
+function confirmDelete(rid){
+  if(!window.confirm('Delete this row?'))return;
+  deleteRow(rid);
+}
+function deleteRow(rid){
+  try{
+    S.db.run(`DELETE FROM "${S.sel}" WHERE rowid = ?`,[rid]);
+    S.rc[S.sel]=Math.max(0,+(S.rc[S.sel]||1)-1);
+    renderTList();loadData();
+    toast('Row deleted','s');
+  }catch(e){toast('Error: '+e.message,'e')}
+}
+
+/* SCHEMA */
+function buildSchema(){
+  const el=document.getElementById('scc');
+  try{
+    const r=S.db.exec(`PRAGMA table_info("${S.sel}")`);
+    const cols=r.length?r[0].values:[];
+    let html=`<div class="sc-nm">${esc(S.sel)}</div>
+      <div class="sc-meta">${fmtNum(S.rc[S.sel]??0)} rows &middot; ${cols.length} columns</div>
+      <div class="sc-sh">Columns</div><div class="col-list">`;
+    cols.forEach(([,name,type,nn,dflt,pk],i)=>{
+      const ts=(type||'ANY').toUpperCase();
+      html+=`<div class="col-c">
+        <span class="col-i">${i+1}</span>
+        <span class="col-nm">${esc(name)}</span>
+        <span class="ty ${tyC(ts)}">${esc(ts)}</span>
+        <div class="bdgs">
+          ${pk?'<span class="bdg b-pk">PK</span>':''}
+          ${nn?'<span class="bdg b-nn">NOT NULL</span>':''}
+          ${dflt!==null?'<span class="bdg b-df">DEFAULT</span>':''}
+        </div>
+      </div>`;
+    });
+    html+='</div>';
+    try{
+      const ddl=S.db.exec(`SELECT sql FROM sqlite_master WHERE type='table' AND name="${S.sel}"`);
+      if(ddl.length&&ddl[0].values[0][0])
+        html+=`<div class="sc-sh">DDL</div><pre class="ddl">${esc(ddl[0].values[0][0])}</pre>`;
+    }catch{}
+    try{
+      const ix=S.db.exec(`PRAGMA index_list("${S.sel}")`);
+      if(ix.length&&ix[0].values.length){
+        html+=`<div class="sc-sh">Indexes (${ix[0].values.length})</div><div class="col-list">`;
+        ix[0].values.forEach(([,nm,uq])=>
+          html+=`<div class="col-c"><span class="col-nm" style="font-size:12px">${esc(nm)}</span>${uq?'<span class="bdg b-uq">UNIQUE</span>':''}</div>`);
+        html+='</div>';
+      }
+    }catch{}
+    el.innerHTML=html;
+  }catch(e){
+    el.innerHTML=`<div class="emp"><div class="emp-ic">!</div><div class="emp-t">Schema error</div><div class="emp-s">${esc(e.message)}</div></div>`;
+  }
+}
+function tyC(t){
+  if(/INT/.test(t))return 'ty-i';if(/REAL|FLOAT|DOUBLE/.test(t))return 'ty-r';
+  if(/CHAR|TEXT|CLOB/.test(t))return 'ty-t';if(/BLOB/.test(t))return 'ty-b';
+  if(/NUM|DEC/.test(t))return 'ty-n';return 'ty-o';
+}
+
+/* SQL EDITOR */
+function updateSQLEd(){if(S.sel)document.getElementById('sqled').value=`SELECT *\nFROM "${S.sel}"\nLIMIT 100;`}
+function runSQL(){
+  const q=document.getElementById('sqled').value.trim();if(!q)return;
+  const rh=document.getElementById('sqlrh'),t0=performance.now();
+  try{
+    const res=S.db.exec(q);const ms=(performance.now()-t0).toFixed(1);
+    const sqlemp=document.getElementById('sqlemp');
+    if(!res.length){
+      rh.innerHTML=`<span class="rt">OK &mdash; ${ms}ms</span> <span>No rows returned</span>`;
+      document.getElementById('sqlth').innerHTML='';document.getElementById('sqltb').innerHTML='';
+      sqlemp.style.display='flex';
+      sqlemp.innerHTML=`<div class="emp-ic">OK</div><div class="emp-t">Query executed</div><div class="emp-s">${ms}ms</div>`;
+      return;
+    }
+    const{columns,values}=res[0];
+    rh.innerHTML=`<span class="rt">OK &mdash; ${ms}ms</span> <span style="color:var(--t2)">${fmtNum(values.length)} rows &middot; ${columns.length} cols</span>`;
+    document.getElementById('sqlemp').style.display='none';
+    document.getElementById('sqlth').innerHTML=`<tr><th style="cursor:default">#</th>${columns.map(c=>`<th style="cursor:default">${esc(c)}</th>`).join('')}</tr>`;
+    const limit=Math.min(values.length,2000);
+    let tbody=values.slice(0,limit).map((row,ri)=>`<tr><td>${ri+1}</td>${row.map(c=>`<td class="${c===null?'cn':typeof c==='number'?'cnum':''}">${c===null?'NULL':esc(String(c))}</td>`).join('')}</tr>`).join('');
+    if(values.length>2000)tbody+=`<tr><td colspan="${columns.length+1}" style="text-align:center;padding:12px;color:var(--t3)">+${fmtNum(values.length-2000)} more rows</td></tr>`;
+    document.getElementById('sqltb').innerHTML=tbody;
+  }catch(e){
+    rh.innerHTML=`<span class="re">Error: ${esc(e.message)}</span>`;
+    document.getElementById('sqlth').innerHTML='';document.getElementById('sqltb').innerHTML='';
+    const sqlemp=document.getElementById('sqlemp');
+    sqlemp.style.display='flex';
+    sqlemp.innerHTML=`<div class="emp-ic">!</div><div class="emp-t">SQL Error</div><div class="emp-s">${esc(e.message)}</div>`;
+    toast(e.message,'e');
+  }
+}
+function clrSQL(){
+  document.getElementById('sqled').value='';
+  document.getElementById('sqlth').innerHTML='';document.getElementById('sqltb').innerHTML='';
+  document.getElementById('sqlrh').innerHTML='<span style="color:var(--t3)">Results will appear here</span>';
+  const sqlemp=document.getElementById('sqlemp');
+  sqlemp.style.display='flex';
+  sqlemp.innerHTML=`<div class="emp-ic">&gt;_</div><div class="emp-t">Write a query above</div><div class="emp-s">Press Run to execute</div>`;
+}
+document.getElementById('sqled').addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();runSQL()}
+  if(e.key==='Tab'){e.preventDefault();const s=e.target.selectionStart,v=e.target.value;
+    e.target.value=v.slice(0,s)+'  '+v.slice(e.target.selectionEnd);e.target.selectionStart=e.target.selectionEnd=s+2}
+});
+
+/* TABS */
+function switchTab(t){
+  S.tab=t;
+  ['data','schema','sql'].forEach(x=>{
+    document.getElementById('tb-'+x).classList.toggle('act',x===t);
+    document.getElementById('p-'+x).classList.toggle('on',x===t);
+  });
+}
+
+/* ── EXPORT FUNCTIONS ── */
+
+/* Helper: data rows without rowid */
+function dataRows(){ return S.fr.map(r=>r.slice(1)); }
+
+function expCSV(){
+  if(!S.sel||!S.cols.length){toast('No table selected','i');return}
+  const csv=S.cols.map(c=>`"${c.replace(/"/g,'""')}"`).join(',')+'\n'
+    +dataRows().map(r=>r.map(c=>c===null?'':typeof c==='number'?c:`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  dlBlob(csv,S.sel+'.csv','text/csv');toast('CSV exported','s');
+}
+function expJSON(){
+  if(!S.sel||!S.cols.length){toast('No table selected','i');return}
+  const objs=dataRows().map(r=>{const o={};S.cols.forEach((c,i)=>o[c]=r[i]);return o});
+  dlBlob(JSON.stringify(objs,null,2),S.sel+'.json','application/json');toast('JSON exported','s');
+}
+function expTSV(){
+  if(!S.sel||!S.cols.length){toast('No table selected','i');return}
+  const tsv=S.cols.join('\t')+'\n'
+    +dataRows().map(r=>r.map(c=>c===null?'':String(c).replace(/\t/g,' ')).join('\t')).join('\n');
+  dlBlob(tsv,S.sel+'.tsv','text/tab-separated-values');toast('TSV exported','s');
+}
+function expSQL(){
+  if(!S.sel||!S.cols.length){toast('No table selected','i');return}
+  const cols=S.cols.map(c=>`"${c}"`).join(', ');
+  let sql=`-- Table: ${S.sel}\n-- Exported: ${new Date().toISOString()}\n\n`;
+  dataRows().forEach(row=>{
+    const vals=row.map(v=>v===null?'NULL':typeof v==='number'?v:`'${String(v).replace(/'/g,"''")}'`).join(', ');
+    sql+=`INSERT INTO "${S.sel}" (${cols}) VALUES (${vals});\n`;
+  });
+  dlBlob(sql,S.sel+'.sql','text/plain');toast('SQL exported','s');
+}
+function expMarkdown(){
+  if(!S.sel||!S.cols.length){toast('No table selected','i');return}
+  const hdr='| '+S.cols.join(' | ')+' |';
+  const sep='| '+S.cols.map(()=>'---').join(' | ')+' |';
+  const rows=dataRows().map(row=>'| '+row.map(c=>c===null?'':String(c).replace(/\|/g,'\\|')).join(' | ')+' |');
+  dlBlob([hdr,sep,...rows].join('\n'),S.sel+'.md','text/markdown');toast('Markdown exported','s');
+}
+function expAllJSON(){
+  if(!S.all.length){toast('No tables','i');return}
+  ld(1);
+  try{
+    const result={};
+    S.all.forEach(t=>{
+      const r=S.db.exec(`SELECT * FROM "${t}"`);
+      if(!r.length){result[t]=[];return}
+      const{columns,values}=r[0];
+      result[t]=values.map(row=>{const o={};columns.forEach((c,i)=>o[c]=row[i]);return o});
+    });
+    dlBlob(JSON.stringify(result,null,2),'database.json','application/json');
+    toast('All tables exported to JSON','s');
+  }catch(e){toast('Error: '+e.message,'e')}
+  ld(0);
+}
+function expSQLDump(){
+  if(!S.all.length){toast('No tables','i');return}
+  ld(1);
+  try{
+    let sql=`-- DBLens SQL Dump\n-- Generated: ${new Date().toISOString()}\n-- Tables: ${S.all.join(', ')}\n\nPRAGMA foreign_keys=OFF;\nBEGIN TRANSACTION;\n\n`;
+    S.all.forEach(t=>{
+      try{
+        const ddl=S.db.exec(`SELECT sql FROM sqlite_master WHERE type='table' AND name='${t}'`);
+        if(ddl.length&&ddl[0].values[0][0]){
+          sql+=`-- ----------------------------------------\n-- Table: ${t}\n-- ----------------------------------------\n`;
+          sql+=`DROP TABLE IF EXISTS "${t}";\n`;
+          sql+=ddl[0].values[0][0]+';\n\n';
+        }
+      }catch{}
+      try{
+        const r=S.db.exec(`SELECT * FROM "${t}"`);
+        if(r.length&&r[0].values.length){
+          const cols=r[0].columns.map(c=>`"${c}"`).join(', ');
+          r[0].values.forEach(row=>{
+            const vals=row.map(v=>v===null?'NULL':typeof v==='number'?v:`'${String(v).replace(/'/g,"''")}'`).join(', ');
+            sql+=`INSERT INTO "${t}" (${cols}) VALUES (${vals});\n`;
+          });
+          sql+='\n';
+        }
+      }catch{}
+    });
+    sql+='COMMIT;\n';
+    dlBlob(sql,'database_dump.sql','text/plain');
+    toast('SQL dump exported','s');
+  }catch(e){toast('Error: '+e.message,'e')}
+  ld(0);
+}
+
+/* CLOSE DB */
+function closeDB(){
+  if(S.db){S.db.close();S.db=null}
+  ED.on=false;
+  Object.assign(S,{tables:[],all:[],sel:null,tab:'data',pg:1,sc:null,sd:'asc',srch:'',rc:{},ridOk:false});
+  document.getElementById('app').classList.remove('on');
+  document.getElementById('landing').style.display='';
+  document.getElementById('tv').classList.remove('on');
+  document.getElementById('nosel').style.display='';
+  document.getElementById('edit-btn').style.display='none';
+  document.getElementById('fi').value='';
+  document.getElementById('tflt').value='';
+  document.getElementById('urlin').value='';
+  closeSB();switchTab('data');
+}
+
+/* UTILS */
+function cpCell(td){
+  const v=td.dataset.v;
+  navigator.clipboard.writeText(v).then(()=>{
+    td.classList.add('copied');toast('Copied','s');
+    setTimeout(()=>td.classList.remove('copied'),700);
+  }).catch(()=>toast('Copy failed','e'));
+}
+function dlBlob(data,name,type){
+  const a=Object.assign(document.createElement('a'),{
+    href:URL.createObjectURL(new Blob([data],{type})),download:name
+  });
+  a.click();URL.revokeObjectURL(a.href);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function fmtB(b){return b<1024?b+' B':b<1048576?(b/1024).toFixed(1)+' KB':(b/1048576).toFixed(1)+' MB'}
+function fmtNum(n){return Number(n).toLocaleString()}
+function ld(v){document.getElementById('ldo').style.display=v?'flex':'none'}
+function toast(msg,type='i'){
+  const c=document.getElementById('toasts'),t=document.createElement('div');
+  t.className=`toast ${type}`;
+  const icons={s:'+',e:'!',i:'i'};
+  t.innerHTML=`<span class="toast-ic">${icons[type]||'i'}</span> ${esc(msg)}`;
+  c.appendChild(t);
+  setTimeout(()=>{t.style.cssText='opacity:0;transform:translateX(12px);transition:0.3s';setTimeout(()=>t.remove(),300)},3000);
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closeSB();closeMobMenu();closeExpDD();closeModal()}
+  if((e.ctrlKey||e.metaKey)&&e.key==='k'){e.preventDefault();if(S.sel)document.getElementById('dsrch').focus()}
+});
+</script>
+</body>
+</html>
