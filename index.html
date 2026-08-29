@@ -381,10 +381,10 @@ pre.ddl{background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--r)
 .skel-cell{height:12px;border-radius:3px}
 
 /* ── TABLE SWITCH ANIMATION ── */
-.pane.on{animation:paneIn .18s ease}
-@keyframes paneIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
-#tv.on{animation:tvIn .2s ease}
-@keyframes tvIn{from{opacity:0}to{opacity:1}}
+@keyframes paneIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes tvIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.pane.anim-in{animation:paneIn .22s ease forwards}
+#tv.anim-in{animation:tvIn .2s ease forwards}
 
 /* ── GLOBAL SEARCH ── */
 #gsearch-wrap{padding:10px 8px;border-bottom:1px solid var(--bdr)}
@@ -400,7 +400,7 @@ pre.ddl{background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--r)
   text-transform:uppercase;letter-spacing:.6px;color:var(--t3);
   position:sticky;top:0;background:var(--bg2)}
 .gsr-row{padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--bdrb);
-  font-size:12px;color:var(--t1);display:flex;align-items:center;gap:8px;
+  font-size:12px;color:var(--t1);display:block;line-height:1.5;
   transition:background .08s}
 .gsr-row:hover{background:var(--bhov);color:var(--t0)}
 .gsr-match{color:var(--blue);font-weight:600}
@@ -789,7 +789,10 @@ function selT(name){
   if(ED.on){ED.on=false;updEditUI()}
   document.getElementById('dsrch').value='';
   document.getElementById('nosel').style.display='none';
-  document.getElementById('tv').classList.add('on');
+  const tv=document.getElementById('tv');
+  tv.classList.add('on');
+  tv.classList.remove('anim-in');
+  requestAnimationFrame(()=>tv.classList.add('anim-in'));
   document.getElementById('edit-btn').style.display='flex';
   renderTList(); loadData(); buildSchema(); updateSQLEd();
 }
@@ -1090,6 +1093,9 @@ function switchTab(t){
     document.getElementById('tb-'+x).classList.toggle('act',x===t);
     document.getElementById('p-'+x).classList.toggle('on',x===t);
   });
+  const pane=document.getElementById('p-'+t);
+  pane.classList.remove('anim-in');
+  requestAnimationFrame(()=>pane.classList.add('anim-in'));
 }
 
 /* ── EXPORT FUNCTIONS ── */
