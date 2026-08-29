@@ -1,0 +1,24 @@
+{
+  "name": "DBLens — SQLite Viewer & Editor",
+  "short_name": "DBLens",
+  "description": "Free SQLite viewer and editor in your browser",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#090c10",
+  "theme_color": "#0d1117",
+  "icons": [
+    {
+      "src": "/logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
