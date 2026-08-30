@@ -404,6 +404,8 @@ pre.ddl{background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--r)
   transition:background .08s}
 .gsr-row:hover{background:var(--bhov);color:var(--t0)}
 .gsr-match{color:var(--blue);font-weight:600}
+.gsr-col{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.4px;margin-right:3px}
+.gsr-dot{color:var(--t3);margin:0 4px}
 .gsr-none{padding:14px 12px;color:var(--t3);font-size:12px;text-align:center}
 
 /* ── ROW COUNTER ANIMATION ── */
@@ -1311,20 +1313,20 @@ function globalSearch(){
         if(!matched.length)return;
         html+=`<div class="gsr-table-name">${esc(t)} &mdash; ${matched.length} result${matched.length!==1?'s':''}</div>`;
         matched.slice(0,4).forEach(row=>{
-          const parts=row.map(c=>{
-            if(c===null)return null;
+          const parts=[];
+          row.forEach((c,ci)=>{
+            if(c===null)return;
             const s=String(c);
             if(s.toLowerCase().includes(q)){
               const idx=s.toLowerCase().indexOf(q);
-              const pre=esc(s.slice(Math.max(0,idx-10),idx));
+              const pre=esc(s.slice(Math.max(0,idx-8),idx));
               const match=esc(s.slice(idx,idx+q.length));
-              const post=esc(s.slice(idx+q.length,idx+q.length+20));
-              return `${pre}<span class="gsr-match">${match}</span>${post}`;
+              const post=esc(s.slice(idx+q.length,idx+q.length+15));
+              const col=esc(columns[ci]);
+              parts.push(`<span class="gsr-col">${col}</span> ${pre}<span class="gsr-match">${match}</span>${post}`);
             }
-            return null;
-          }).filter(Boolean).slice(0,3);
-          const tName=t;
-          html+=`<div class="gsr-row" data-tbl="${esc(tName)}">${parts.join(' &middot; ')||'&mdash;'}</div>`;
+          });
+          html+=`<div class="gsr-row" data-tbl="${esc(t)}">${parts.slice(0,3).join('<span class="gsr-dot"> · </span>')||'&mdash;'}</div>`;
           total++;
         });
         if(matched.length>4)html+=`<div style="padding:4px 12px 8px;font-size:11px;color:var(--t3)">+${matched.length-4} more &mdash; open table</div>`;
