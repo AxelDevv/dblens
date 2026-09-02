@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://dblenss.vercel.app/sitemap.xml
